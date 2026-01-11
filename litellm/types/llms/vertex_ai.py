@@ -295,7 +295,7 @@ class CachedContent(TypedDict, total=False):
 
 class RequestBody(TypedDict, total=False):
     contents: Required[List[ContentType]]
-    system_instruction: SystemInstructions
+    systemInstruction: SystemInstructions
     tools: Tools
     toolConfig: ToolConfig
     safetySettings: List[SafetSettingsConfig]
@@ -306,7 +306,7 @@ class RequestBody(TypedDict, total=False):
 
 class CachedContentRequestBody(TypedDict, total=False):
     contents: Required[List[ContentType]]
-    system_instruction: SystemInstructions
+    systemInstruction: SystemInstructions
     tools: Tools
     toolConfig: ToolConfig
     model: Required[str]  # Format: models/{model}

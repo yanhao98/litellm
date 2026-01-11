@@ -543,7 +543,7 @@ def _transform_request_body(
         )
         data = RequestBody(contents=content)
         if system_instructions is not None:
-            data["system_instruction"] = system_instructions
+            data["systemInstruction"] = system_instructions
         if tools is not None:
             data["tools"] = tools
         if tool_choice is not None:

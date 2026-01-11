@@ -191,6 +191,6 @@ def transform_openai_messages_to_gemini_context_caching(
         data["ttl"] = ttl
     
     if transformed_system_messages is not None:
-        data["system_instruction"] = transformed_system_messages
+        data["systemInstruction"] = transformed_system_messages
 
     return data
