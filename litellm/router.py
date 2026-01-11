@@ -6372,14 +6372,15 @@ class Router:
         return self.get_model_list(model_name=model_name)
 
     def get_deployment_model_info(
-        self, model_id: str, model_name: str
+        self, model_id: str, model_name: str, base_model: Optional[str] = None
     ) -> Optional[ModelInfo]:
         """
         For a given model id, return the model info
 
         1. Check if model_id is in model info
         2. If not, check if litellm model name is in model info
-        3. If not, return None
+        3. If base_model is provided, use it to get model info
+        4. If not, return None
         """
         from litellm.utils import _update_dictionary
 
@@ -6397,20 +6398,24 @@ class Router:
         except Exception:
             pass
 
-        ## check for base model
+        ## check for base model - first from custom_model_info, then from parameter
+        _base_model: Optional[str] = None
+        if custom_model_info is not None:
+            _base_model = custom_model_info.get("base_model", None)
+        if _base_model is None and base_model is not None:
+            _base_model = base_model
+
         try:
-            if custom_model_info is not None:
-                base_model = custom_model_info.get("base_model", None)
-                if base_model is not None:
-                    ## update litellm model info with base model info
-                    base_model_info = litellm.get_model_info(model=base_model)
-                    if base_model_info is not None:
-                        custom_model_info = custom_model_info or {}
-                        # Base model provides defaults, custom model info overrides
-                        custom_model_info = _update_dictionary(
-                            cast(dict, base_model_info),
-                            custom_model_info,
-                        )
+            if _base_model is not None:
+                ## update litellm model info with base model info
+                base_model_info = litellm.get_model_info(model=_base_model)
+                if base_model_info is not None:
+                    custom_model_info = custom_model_info or {}
+                    # Base model provides defaults, custom model info overrides
+                    custom_model_info = _update_dictionary(
+                        cast(dict, base_model_info),
+                        custom_model_info,
+                    )
         except Exception:
             pass
 
@@ -6422,6 +6427,8 @@ class Router:
                     custom_model_info,
                 ),
             )
+        elif custom_model_info is not None:
+            model_info = cast(ModelInfo, custom_model_info)
         elif litellm_model_name_model_info is not None:
             model_info = litellm_model_name_model_info
 
@@ -6491,9 +6498,10 @@ class Router:
             # get model info
             try:
                 model_id = model_info_dict.get("id", None)
+                base_model = model_info_dict.get("base_model", None)
                 if model_id is not None:
                     model_info = self.get_deployment_model_info(
-                        model_id=model_id, model_name=litellm_params.model
+                        model_id=model_id, model_name=litellm_params.model, base_model=base_model
                     )
                 else:
                     model_info = None
