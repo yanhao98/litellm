@@ -712,17 +712,50 @@ async def get_otel_spans():
     }
 
 
+def _init_loggers_from_env():
+    """Initialize loggers from environment variables when WORKER_CONFIG is not set."""
+    import logging
+
+    from litellm._logging import (
+        verbose_logger,
+        verbose_proxy_logger,
+        verbose_router_logger,
+    )
+
+    # Check DETAILED_DEBUG first (highest priority)
+    detailed_debug = os.environ.get("DETAILED_DEBUG", "").lower() in ("true", "1", "yes")
+    if detailed_debug:
+        verbose_logger.setLevel(level=logging.DEBUG)
+        verbose_router_logger.setLevel(level=logging.DEBUG)
+        verbose_proxy_logger.setLevel(level=logging.DEBUG)
+        return
+
+    # Check LITELLM_LOG
+    litellm_log_setting = os.environ.get("LITELLM_LOG", "")
+    if litellm_log_setting.upper() == "DEBUG":
+        verbose_router_logger.setLevel(level=logging.DEBUG)
+        verbose_proxy_logger.setLevel(level=logging.DEBUG)
+    elif litellm_log_setting.upper() == "INFO":
+        verbose_router_logger.setLevel(level=logging.INFO)
+        verbose_proxy_logger.setLevel(level=logging.INFO)
+
+
 # Helper functions for debugging
 def init_verbose_loggers():
     try:
         worker_config = get_secret_str("WORKER_CONFIG")
         # if not, assume it's a json string
         if worker_config is None:
+            # No WORKER_CONFIG, check environment variables directly
+            _init_loggers_from_env()
             return
         if os.path.isfile(worker_config):
+            # Config is a file path, check environment variables directly
+            _init_loggers_from_env()
             return
         _settings = json.loads(worker_config)
         if not isinstance(_settings, dict):
+            _init_loggers_from_env()
             return
 
         debug = _settings.get("debug", None)
